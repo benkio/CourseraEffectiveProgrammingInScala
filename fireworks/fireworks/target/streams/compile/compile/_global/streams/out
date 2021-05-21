@@ -1,0 +1,6 @@
+[0m[[0m[31merror[0m] [0m[0m[31m-- [E008] Not Found Error: /home/benkio/workspace/CourseraEffectiveProgrammingInScala/fireworks/fireworks/src/main/scala/fireworks/Fireworks.scala:157:42 [0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m157 |[0m      [33mthen[0m [33mthis[0m.copy(particles = Particle.next(particles), countDown = countDown - [31m1[0m)[0m
+[0m[[0m[31merror[0m] [0m[0m    |                                 [31m^^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m    |    value next is not a member of object fireworks.Particle - did you mean Particle.init?[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m
