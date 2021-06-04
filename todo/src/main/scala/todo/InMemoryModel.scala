@@ -59,7 +59,7 @@ object InMemoryModel extends Model:
     Tasks(idStore)
 
   def tags: Tags =
-    Tags(idStore.flatMap { case (id, t) => t.tags }.toSet.toList)
+    Tags(idStore.flatMap { case (id, t) => t.tags }.toList.distinct)
 
   def tasks(tag: Tag): Tasks =
     Tasks(idStore.filter { case (id, t) => t.tags.contains(tag) })
