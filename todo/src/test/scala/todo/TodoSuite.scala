@@ -3,10 +3,8 @@ package todo
 import todo.data.*
 import munit.FunSuite
 
-/**
- * This suite aggregates the tests for the InMemoryModel and the
- * PersistentModel. It is used by the grading infrastructure.
- */
+/** This suite aggregates the tests for the InMemoryModel and the PersistentModel. It is used by the grading infrastructure.
+  */
 class TodoSuite extends FunSuite:
 
   // Data we use for testing
@@ -34,9 +32,11 @@ class TodoSuite extends FunSuite:
     modelName: String,
     actual: Option[Task],
     expected: Task
-  )(using loc: munit.Location): Unit =
+  )(
+    using loc: munit.Location
+  ): Unit =
     actual match
-      case None =>
+      case None       =>
         fail(s"Using $modelName: We expected the task $expected but we received None instead.")
       case Some(task) =>
         assertEquals(task, expected, s"Using $modelName: We expected the task $expected but we received $task instead.")
@@ -44,9 +44,11 @@ class TodoSuite extends FunSuite:
   def assertTaskActive(
     modelName: String,
     task: Option[Task]
-  )(using loc: munit.Location): Unit =
+  )(
+    using loc: munit.Location
+  ): Unit =
     task match
-      case None =>
+      case None    =>
         fail(s"Using $modelName: We expected a task but we received None instead.")
       case Some(t) =>
         assert(t.state.active, s"Using $modelName: We expected the task's state to be active but it was ${t.state}")
@@ -54,9 +56,11 @@ class TodoSuite extends FunSuite:
   def assertTaskCompleted(
     modelName: String,
     task: Option[Task]
-  )(using loc: munit.Location): Unit =
+  )(
+    using loc: munit.Location
+  ): Unit =
     task match
-      case None =>
+      case None    =>
         fail(s"Using $modelName: We expected a task but we received None instead.")
       case Some(t) =>
         assert(t.state.completed, s"Using $modelName: We expected the task's state to be completed but it was ${t.state}")
@@ -64,7 +68,7 @@ class TodoSuite extends FunSuite:
   // The tests, parameterized by a fixture
 
   def allTests(fixture: FunFixture[(String, Model)]): Unit =
-    fixture.test("Created tasks can be read"){ case (name, model) =>
+    fixture.test("Created tasks can be read") { case (name, model) =>
       val id1 = model.create(task1)
       assertTask(name, model.read(id1), task1)
 
@@ -72,44 +76,40 @@ class TodoSuite extends FunSuite:
       assertTask(name, model.read(id2), task2)
     }
 
-    fixture.test("Updated tasks can be read"){ case (name, model) =>
+    fixture.test("Updated tasks can be read") { case (name, model) =>
       val id = model.create(task1)
       val updated = model.update(id)(_ => task2)
 
       assertTask(name, updated, task2)
     }
 
-    fixture.test("Deleted tasks are no longer read"){ case (name, model) =>
+    fixture.test("Deleted tasks are no longer read") { case (name, model) =>
       val id1 = model.create(task1)
       val id2 = model.create(task2)
 
       assert(model.delete(id1), s"Using $name: We expected deleting $id1 to return true")
 
-      assertEquals(model.read(id1),
-                   None,
-                   s"Using $name: The deleted task was still returned when read")
-      assertEquals(model.read(id2),
-                   Some(task2),
-                   s"Using $name: The task that was not deleted was not returned when read")
+      assertEquals(model.read(id1), None, s"Using $name: The deleted task was still returned when read")
+      assertEquals(model.read(id2), Some(task2), s"Using $name: The task that was not deleted was not returned when read")
     }
 
-    fixture.test("Tasks returns all inserted tasks in insertion order"){ case (name, model) =>
+    fixture.test("Tasks returns all inserted tasks in insertion order") { case (name, model) =>
       val id1 = model.create(task1)
       val t1 = model.tasks
 
-      assertEquals(t1.toList,
-                   List((id1 -> task1)),
-                   s"Using $name: The list of tasks is different to the tasks that were created")
+      assertEquals(t1.toList, List((id1 -> task1)), s"Using $name: The list of tasks is different to the tasks that were created")
 
       val id2 = model.create(task2)
       val t2 = model.tasks
 
-      assertEquals(t2.toList,
-                   List((id1 -> task1), (id2 -> task2)),
-                   s"Using $name: The list of tasks is different to the tasks that were created, or it is not in order of creation")
+      assertEquals(
+        t2.toList,
+        List((id1 -> task1), (id2 -> task2)),
+        s"Using $name: The list of tasks is different to the tasks that were created, or it is not in order of creation"
+      )
     }
 
-    fixture.test("Tasks(tag) returns only tasks with given tag"){ case (name, model) =>
+    fixture.test("Tasks(tag) returns only tasks with given tag") { case (name, model) =>
       val id1 = model.create(task1)
       val id2 = model.create(task2)
       val id3 = model.create(task3)
@@ -119,7 +119,7 @@ class TodoSuite extends FunSuite:
       assertEquals(model.tasks(Tag("c")).toList, List(id2 -> task2, id3 -> task3))
     }
 
-    fixture.test("complete changes state to completed, if task is not already completed"){ case (name, model) =>
+    fixture.test("complete changes state to completed, if task is not already completed") { case (name, model) =>
       val id1 = model.create(task1)
       val id2 = model.create(task2)
 
@@ -132,7 +132,7 @@ class TodoSuite extends FunSuite:
       assertTaskCompleted(name, model.complete(id2))
     }
 
-    fixture.test("tags returns all tags"){ case (name, model) =>
+    fixture.test("tags returns all tags") { case (name, model) =>
       val id1 = model.create(task1)
       assertEquals(model.tags.toList, List(Tag("a"), Tag("b")), s"Using $name")
 

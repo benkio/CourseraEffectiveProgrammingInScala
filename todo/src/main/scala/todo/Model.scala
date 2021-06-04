@@ -2,12 +2,10 @@ package todo
 
 import todo.data.*
 
-/**
- * The Model defines an interface for the business logic of the todo list
- * application.
- *
- * You should NOT modify this file
- */
+/** The Model defines an interface for the business logic of the todo list application.
+  *
+  * You should NOT modify this file
+  */
 trait Model:
   /*
    * Create the given Task, returning the Id associated with the new Task.

@@ -13,6 +13,7 @@ import java.time.ZonedDateTime
  * interface.
  */
 object Codecs:
+
   given idEncoder: Codec[Id] with
     def apply(c: HCursor): Decoder.Result[Id] =
       c.downField("id").as[Int].map(id => Id(id))
@@ -20,8 +21,8 @@ object Codecs:
     def apply(id: Id): Json =
       Json.obj("id" -> Json.fromInt(id.toInt))
 
-
   given stateCodec: Codec[State] with
+
     def apply(c: HCursor): Decoder.Result[State] =
       c.downField("state").as[String].flatMap {
         case "active" =>
@@ -36,7 +37,7 @@ object Codecs:
         case err =>
           Left(
             DecodingFailure(
-              s"The task type ${err} is not one of the expected types of 'active' or 'completed'",
+              s"The task type $err is not one of the expected types of 'active' or 'completed'",
               List.empty
             )
           )
@@ -44,14 +45,13 @@ object Codecs:
 
     def apply(s: State): Json =
       s match
-        case State.Active =>
+        case State.Active          =>
           Json.obj("state" -> Json.fromString("active"))
         case State.Completed(date) =>
           Json.obj(
             "state" -> Json.fromString("completed"),
             "date" -> Json.fromString(date.toString)
           )
-
 
   given tagCodec: Codec[Tag] with
     def apply(c: HCursor): Decoder.Result[Tag] =
@@ -60,7 +60,6 @@ object Codecs:
     def apply(t: Tag): Json =
       Json.obj("tag" -> Json.fromString(t.tag))
 
-
   given tagsCodec: Codec[Tags] with
     def apply(c: HCursor): Decoder.Result[Tags] =
       c.as(Decoder.decodeList(tagCodec)).map(t => Tags(t))
@@ -68,14 +67,14 @@ object Codecs:
     def apply(t: Tags): Json =
       Json.arr(t.tags.toArray.map(tag => tag.asJson)*)
 
-
   given taskCodec: Codec[Task] with
+
     def apply(c: HCursor): Decoder.Result[Task] =
       for {
-        state <- c.downField("state").as[State]
+        state       <- c.downField("state").as[State]
         description <- c.downField("description").as[String]
-        notes <- c.downField("notes").as[Option[String]]
-        tags <- c.downField("tags").as[List[Tag]]
+        notes       <- c.downField("notes").as[Option[String]]
+        tags        <- c.downField("tags").as[List[Tag]]
       } yield Task(state, description, notes, tags)
 
     def apply(t: Task): Json =
@@ -86,12 +85,13 @@ object Codecs:
         "tags" -> t.tags.asJson
       )
 
-
   given tasksCodec: Codec[Tasks] with
+
     val elementDecoder = new Decoder[(Id, Task)]:
+
       def apply(c: HCursor): Decoder.Result[(Id, Task)] =
         for {
-          id <- c.downField("id").as[Int]
+          id   <- c.downField("id").as[Int]
           task <- c.downField("task").as[Task]
         } yield (Id(id) -> task)
 
@@ -100,8 +100,7 @@ object Codecs:
 
     def apply(t: Tasks): Json =
       Json.arr(
-        t.tasks.toArray.map {
-          case (id, task) =>
-            Json.obj("id" -> Json.fromInt(id.toInt), "task" -> task.asJson)
+        t.tasks.toArray.map { case (id, task) =>
+          Json.obj("id" -> Json.fromInt(id.toInt), "task" -> task.asJson)
         }*
       )

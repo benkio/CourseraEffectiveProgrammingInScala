@@ -1,7 +1,6 @@
 package todo
 package data
 
-
 /*
  * A Task represents a job to be done.
  *
@@ -13,9 +12,10 @@ final case class Task(
   notes: Option[String],
   tags: List[Tag]
 ):
+
   def complete: Task =
     val newState =
       state match
-        case State.Active => State.completedNow
+        case State.Active       => State.completedNow
         case State.Completed(d) => State.Completed(d)
     this.copy(state = newState)

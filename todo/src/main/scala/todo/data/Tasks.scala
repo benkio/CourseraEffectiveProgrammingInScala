@@ -1,7 +1,6 @@
 package todo
 package data
 
-
 /*
  * Tasks represents a collection of Task items. We assume order is important.
  *

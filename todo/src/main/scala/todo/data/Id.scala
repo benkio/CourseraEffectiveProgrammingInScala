@@ -1,7 +1,6 @@
 package todo
 package data
 
-
 /*
  * The Id class encapsulates an integer that represents an Id. This
  * distinguishes Ids from other Ints that may occur in the program.

@@ -1,7 +1,6 @@
 package todo
 package data
 
-
 /*
  * Tags represents a collection of Tag items. The Tag items should be distinct
  * (that is, with no duplicates).
