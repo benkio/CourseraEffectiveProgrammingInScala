@@ -64,7 +64,6 @@ class HeapProperties(heapInterface: HeapInterface) extends Properties("Heap"):
       check(heap)
     }
 
-  // TODO Write more properties here to detect the bugs
   // in bogus BinomialHeap implementations
   property(
     "inserting a list of integer into an empty heap and then continually finding and deleting the minimal element of a heap should return a sorted sequence"

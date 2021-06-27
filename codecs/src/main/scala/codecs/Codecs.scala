@@ -80,10 +80,11 @@ trait EncoderInstances:
 
   /** An encoder for `String` values */
   given stringEncoder: Encoder[String] =
-    ??? // TODO Implement the `Encoder[String]` given instance
+    Encoder.fromFunction(Json.Str(_))
 
   /** An encoder for `Boolean` values */
-  // TODO Define a given instance of type `Encoder[Boolean]`
+  given booleanEncoder: Encoder[Boolean] =
+    Encoder.fromFunction(Json.Bool(_))
 
   /** Encodes a list of values of type `A` into a JSON array containing the list elements encoded with the given `encoder`
     */
@@ -175,13 +176,16 @@ trait DecoderInstances:
     Decoder.fromPartialFunction { case Json.Null => () }
 
   /** A decoder for `Int` values. Hint: use the `isValidInt` method of `BigDecimal`. */
-  // TODO Define a given instance of type `Decoder[Int]`
+  given intDecoder: Decoder[Int] =
+    Decoder.fromPartialFunction { case Json.Num(bd) if bd.isValidInt => bd.intValue }
 
   /** A decoder for `String` values */
-  // TODO Define a given instance of type `Decoder[String]`
+  given stringDecoder: Decoder[String] =
+    Decoder.fromPartialFunction { case Json.Str(s) => s }
 
   /** A decoder for `Boolean` values */
-  // TODO Define a given instance of type `Decoder[Boolean]`
+  given booleanDecoder: Decoder[Boolean] =
+    Decoder.fromPartialFunction { case Json.Bool(b) => b }
 
   /** A decoder for JSON arrays. It decodes each item of the array using the given `decoder`. The resulting decoder succeeds only if all the
     * JSON array items are successfully decoded.
@@ -196,13 +200,23 @@ trait DecoderInstances:
     using decoder: Decoder[A]
   ): Decoder[List[A]] =
     Decoder.fromFunction {
-      ???
+      case Json.Arr(lj) =>
+        lj.foldLeft(Some(List.empty[A]): Option[List[A]]) { case (acc, a) =>
+          for {
+            acc2     <- acc
+            aDecoded <- decoder.decode(a)
+          } yield acc2 :+ aDecoded
+        }
+      case _            => None
     }
 
   /** A decoder for JSON objects. It decodes the value of a field of the supplied `name` using the given `decoder`.
     */
   def field[A](name: String)(using decoder: Decoder[A]): Decoder[A] =
-    ???
+    Decoder.fromFunction {
+      case Json.Obj(fields) if fields.contains(name) => decoder.decode(fields.get(name).get)
+      case _                                         => None
+    }
 
 end DecoderInstances
 
@@ -221,7 +235,10 @@ trait PersonCodecs:
 
   /** The corresponding decoder for `Person` */
   given Decoder[Person] =
-    ???
+    Decoder
+      .field[String]("name")
+      .zip(Decoder.field[Int]("age"))
+      .transform[Person]((name: String, age: Int) => Person(name = name, age = age))
 
 end PersonCodecs
 
@@ -231,12 +248,18 @@ object Contacts extends ContactsCodecs
 
 trait ContactsCodecs:
 
-  // TODO Define the encoder and the decoder for `Contacts`
   // The JSON representation of a value of type `Contacts` should be
   // a JSON object with a single field named “people” containing an
   // array of values of type `Person` (reuse the `Person` codecs)
-  given Encoder[Contacts] = ???
-// ... then implement the decoder
+  given Encoder[Contacts] =
+    ObjectEncoder
+      .field[List[Person]]("people")
+      .transform[Contacts](_.people)
+
+  given Decoder[Contacts] =
+    Decoder
+      .field[List[Person]]("people")
+      .transform[Contacts](Contacts(_))
 
 end ContactsCodecs
 
@@ -254,8 +277,8 @@ import Util.*
   val maybeJsonObj2 = parseJson(""" { "name": "Alice", "age": "42" } """)
 
 // Uncomment the following lines as you progress in the assignment
-// println(maybeJsonString.flatMap(_.decodeAs[Int]))
-// println(maybeJsonString.flatMap(_.decodeAs[String]))
-// println(maybeJsonObj.flatMap(_.decodeAs[Person]))
-// println(maybeJsonObj2.flatMap(_.decodeAs[Person]))
-// println(renderJson(Person("Bob", 66)))
+  println(maybeJsonString.flatMap(_.decodeAs[Int]))
+  println(maybeJsonString.flatMap(_.decodeAs[String]))
+  println(maybeJsonObj.flatMap(_.decodeAs[Person]))
+  println(maybeJsonObj2.flatMap(_.decodeAs[Person]))
+  println(renderJson(Person("Bob", 66)))
