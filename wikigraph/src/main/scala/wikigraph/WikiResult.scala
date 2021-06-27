@@ -52,7 +52,7 @@ case class WikiResult[A](val value: Future[Either[Seq[WikiError], A]]):
     * Hint: Both Either and Future have a similar method
     */
   def map[B](f: A => B)(using ExecutionContext): WikiResult[B] =
-    ???
+    WikiResult(value.map(_.map(f)))
 
   /** Use the result of this computation as an input for another asynchronous computation
     *
@@ -63,7 +63,8 @@ case class WikiResult[A](val value: Future[Either[Seq[WikiError], A]]):
     */
   def flatMap[B](f: A => WikiResult[B])(using ExecutionContext): WikiResult[B] =
     val futureB: Future[Either[Seq[WikiError], B]] = value.flatMap {
-      ???
+      case Left(errors) => Future(Left(errors))
+      case Right(a)     => f(a).value
     }
     WikiResult(futureB)
 
@@ -76,8 +77,12 @@ case class WikiResult[A](val value: Future[Either[Seq[WikiError], A]]):
     * Hint: The async part has been handled for you. You need to zip the two Either
     */
   def zip[B](that: WikiResult[B])(using ExecutionContext): WikiResult[(A, B)] =
-    def zipEithersAcc(a: Either[Seq[WikiError], A], b: Either[Seq[WikiError], B]): Either[Seq[WikiError], (A, B)] =
-      ???
+    def zipEithersAcc(a: Either[Seq[WikiError], A], b: Either[Seq[WikiError], B]): Either[Seq[WikiError], (A, B)] = (a, b) match {
+      case (Left(aErrors), Left(bErrors)) => Left(aErrors ++ bErrors)
+      case (Left(aErrors), _)             => Left(aErrors)
+      case (_, Left(bErrors))             => Left(bErrors)
+      case (Right(aValue), Right(bValue)) => Right((aValue, bValue))
+    }
     WikiResult(this.value.flatMap { thisEither =>
       that.value.map { thatEither =>
         zipEithersAcc(thisEither, thatEither)
@@ -124,6 +129,18 @@ object WikiResult:
     * Hint: Use WikiResult.zip
     */
   def traverse[A, B](ls: Seq[A])(f: A => WikiResult[B])(using ExecutionContext): WikiResult[Seq[B]] =
-    ???
+    WikiResult(
+      Future
+        .traverse(ls)(f(_).value)
+        .map { results =>
+          val (errors, values) = results.foldLeft((Seq.empty[WikiError], Seq.empty[B])) { case ((errors, values), e) =>
+            e.match {
+              case Left(bErrors) => (errors ++ bErrors, values)
+              case Right(bValue) => (errors, values :+ bValue)
+            }
+          }
+          if (errors.nonEmpty) then Left(errors) else Right(values)
+        }
+    )
 
 end WikiResult

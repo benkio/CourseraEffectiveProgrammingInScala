@@ -20,7 +20,10 @@ final class Wikigraph(client: Wikipedia):
     * Hint: Use the methods that you implemented in WikiResult.
     */
   def namedLinks(of: ArticleId): WikiResult[Set[String]] =
-    ???
+    client
+      .linksFrom(of)
+      .flatMap(links => WikiResult.traverse(links.toSeq)(client.nameOfArticle))
+      .map(_.toSet)
 
   /** Computes the distance between two articles using breadth first search.
     *
@@ -55,7 +58,27 @@ final class Wikigraph(client: Wikipedia):
       *   the next nodes to visit and their distance from `start`
       */
     def iter(visited: Set[ArticleId], q: Queue[(Int, ArticleId)]): WikiResult[Option[Int]] =
-      ???
+      if (q.isEmpty || q.dequeue._1._1 > maxDepth) then WikiResult.successful(None)
+      else
+        val ((articleDepth, articleId), nextQueue) = q.dequeue
+        client
+          .linksFrom(articleId)
+          .flatMap(neighboors =>
+            if neighboors.contains(target) then WikiResult.successful(Some(articleDepth))
+            else
+              val newVisited = visited + articleId
+              iter(
+                newVisited,
+                nextQueue
+                  .enqueueAll(
+                    neighboors
+                      .filterNot(newVisited.contains(_))
+                      .map(node => ((articleDepth + 1) -> node))
+                  )
+              )
+          )
+          .fallbackTo(iter(visited, nextQueue))
+
     if start == target then WikiResult.successful(Some(0))
     else iter(Set(start), Queue(1 -> start))
 
@@ -72,5 +95,17 @@ final class Wikigraph(client: Wikipedia):
     * Hint: You should use the methods that you implemented on WikiResult as well as breadthFirstSearch
     */
   def distanceMatrix(titles: List[String], maxDepth: Int = 50): WikiResult[Seq[(String, String, Option[Int])]] =
-    ???
+    val titlePairs = for {
+      x <- titles
+      y <- titles
+      if x != y
+    } yield (x, y)
+    WikiResult.traverse(titlePairs) { case (titleFrom, titleTo) =>
+      for {
+        articleIdFrom    <- client.searchId(titleFrom)
+        articleIdTo      <- client.searchId(titleTo)
+        optionalDistance <- breadthFirstSearch(articleIdFrom, articleIdTo, maxDepth)
+      } yield (titleFrom, titleTo, optionalDistance)
+    }
+
 end Wikigraph
